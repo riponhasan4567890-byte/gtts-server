@@ -8,7 +8,17 @@ import threading
 import uuid
 
 app = Flask(__name__)
-jobs = {}
+
+def save_job(job_id, status):
+    with open(f'/tmp/job_{job_id}.txt', 'w') as f:
+        f.write(status)
+
+def get_job(job_id):
+    try:
+        with open(f'/tmp/job_{job_id}.txt', 'r') as f:
+            return f.read()
+    except:
+        return 'not_found'
 
 @app.route('/tts', methods=['GET'])
 def tts():
@@ -22,7 +32,7 @@ def tts():
 
 def process_video(job_id, image_urls, audio_url, text):
     try:
-        jobs[job_id] = 'processing'
+        save_job(job_id, 'processing')
 
         r_audio = requests.get(audio_url)
         with open(f'/tmp/{job_id}_audio.mp3', 'wb') as f:
@@ -99,10 +109,10 @@ def process_video(job_id, image_urls, audio_url, text):
             '-shortest', f'/tmp/{job_id}_final.mp4'
         ], capture_output=True)
 
-        jobs[job_id] = 'done'
+        save_job(job_id, 'done')
 
     except Exception as e:
-        jobs[job_id] = f'error: {str(e)}'
+        save_job(job_id, f'error: {str(e)}')
 
 @app.route('/create-video', methods=['POST'])
 def create_video():
@@ -118,12 +128,12 @@ def create_video():
 
 @app.route('/video-status/<job_id>', methods=['GET'])
 def video_status(job_id):
-    status = jobs.get(job_id, 'not_found')
+    status = get_job(job_id)
     return jsonify({'job_id': job_id, 'status': status})
 
 @app.route('/get-video/<job_id>', methods=['GET'])
 def get_video(job_id):
-    if jobs.get(job_id) == 'done':
+    if get_job(job_id) == 'done':
         return send_file(f'/tmp/{job_id}_final.mp4', mimetype='video/mp4')
     return jsonify({'error': 'not ready'}), 404
 
