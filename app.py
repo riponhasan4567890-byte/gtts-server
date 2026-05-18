@@ -128,6 +128,14 @@ def get_video(job_id):
     if status == 'done':
         return send_file(f'/tmp/{job_id}_final.mp4', mimetype='video/mp4')
     return jsonify({'error': 'not ready', 'status': status}), 404
+@app.route('/debug/<job_id>', methods=['GET'])
+def debug(job_id):
+    info = {
+        'status': get_job(job_id),
+        'files': os.listdir('/tmp')
+    }
+    return jsonify(info)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
