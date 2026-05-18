@@ -50,15 +50,7 @@ def process_video(job_id, image_urls, audio_url, text):
         total_duration = float(result.stdout.strip())
         per_image = total_duration / max(len(image_urls), 1)
 
-        # Ken Burns effects
-        effects = [
-            "zoompan=z='min(zoom+0.0015,1.3)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1280x720",
-            "zoompan=z='if(lte(zoom,1.0),1.3,max(1.001,zoom-0.0015))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s=1280x720",
-            "zoompan=z='min(zoom+0.0015,1.3)':x='0':y='ih/2-(ih/zoom/2)':d=125:s=1280x720",
-            "zoompan=z='min(zoom+0.0015,1.3)':x='iw-(iw/zoom)':y='ih/2-(ih/zoom/2)':d=125:s=1280x720",
-        ]
-
-        # Download images and create segments
+        # Download images and create segments with fade effect
         segment_files = []
         for i, url in enumerate(image_urls):
             r = requests.get(url, timeout=30)
@@ -67,10 +59,9 @@ def process_video(job_id, image_urls, audio_url, text):
                 f.write(r.content)
 
             out = f'/tmp/{job_id}_seg_{i}.mp4'
-            effect = effects[i % len(effects)]
             res = subprocess.run([
                 'ffmpeg', '-y', '-loop', '1', '-i', img_path,
-                '-vf', f'scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,{effect}',
+                '-vf', f'scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,fade=t=in:st=0:d=1',
                 '-t', str(per_image), '-c:v', 'libx264',
                 '-pix_fmt', 'yuv420p', '-r', '25', out
             ], capture_output=True, timeout=120)
