@@ -59,12 +59,12 @@ def process_video(job_id, image_urls, audio_url, text):
                 f.write(r.content)
 
             out = f'/tmp/{job_id}_seg_{i}.mp4'
-res = subprocess.run([
-    'ffmpeg', '-y', '-loop', '1', '-i', img_path,
-    '-vf', 'scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720',
-    '-t', str(per_image), '-c:v', 'libx264',
-    '-pix_fmt', 'yuv420p', '-r', '25', out
-], capture_output=True, timeout=300)
+        res = subprocess.run([
+            'ffmpeg', '-y', '-loop', '1', '-i', img_path,
+             '-vf', 'scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720',
+           '-t', str(per_image), '-c:v', 'libx264',
+            '-pix_fmt', 'yuv420p', '-r', '25', out
+           ], capture_output=True, timeout=300)
 
             if os.path.exists(out) and os.path.getsize(out) > 0:
                 segment_files.append(out)
