@@ -132,5 +132,15 @@ def debug(job_id):
     }
     return jsonify(info)
 
+@app.route('/get-image', methods=['GET'])
+def get_image():
+    prompt = request.args.get('prompt', 'islamic mosque')
+    seed = request.args.get('seed', '1')
+    url = f"https://image.pollinations.ai/prompt/{requests.utils.quote(prompt)}?nologo=true&width=1280&height=720&seed={seed}"
+    r = requests.get(url, timeout=60)
+    return send_file(io.BytesIO(r.content), mimetype='image/jpeg')
+
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
