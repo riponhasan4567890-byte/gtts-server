@@ -81,7 +81,7 @@ def process_video(job_id, image_urls, audio_url, text):
         res = subprocess.run([
             'ffmpeg', '-y', '-f', 'concat', '-safe', '0',
             '-i', list_file, '-c', 'copy', f'/tmp/{job_id}_raw.mp4'
-        ], capture_output=True, timeout=120)
+        ], capture_output=True, timeout=300)
 
         if not os.path.exists(f'/tmp/{job_id}_raw.mp4'):
             save_job(job_id, f'error: concat failed - {res.stderr.decode()}')
@@ -95,7 +95,7 @@ def process_video(job_id, image_urls, audio_url, text):
             '-c:v', 'libx264', '-c:a', 'aac',
             '-b:a', '192k', '-shortest',
             f'/tmp/{job_id}_final.mp4'
-        ], capture_output=True, timeout=120)
+        ], capture_output=True, timeout=300)
 
         if os.path.exists(f'/tmp/{job_id}_final.mp4') and os.path.getsize(f'/tmp/{job_id}_final.mp4') > 0:
             save_job(job_id, 'done')
