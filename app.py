@@ -35,13 +35,11 @@ def process_video(job_id, image_urls, audio_url, text):
     try:
         save_job(job_id, 'processing')
 
-        # Download audio
         r_audio = requests.get(audio_url, timeout=30)
         audio_path = f'/tmp/{job_id}_audio.mp3'
         with open(audio_path, 'wb') as f:
             f.write(r_audio.content)
 
-        # Get audio duration
         result = subprocess.run(
             ['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
              '-of', 'default=noprint_wrappers=1:nokey=1', audio_path],
@@ -50,7 +48,6 @@ def process_video(job_id, image_urls, audio_url, text):
         total_duration = float(result.stdout.strip())
         per_image = total_duration / max(len(image_urls), 1)
 
-        # Download images and create segments with fade effect
         segment_files = []
         for i, url in enumerate(image_urls):
             r = requests.get(url, timeout=30)
@@ -59,12 +56,12 @@ def process_video(job_id, image_urls, audio_url, text):
                 f.write(r.content)
 
             out = f'/tmp/{job_id}_seg_{i}.mp4'
-        res = subprocess.run([
-            'ffmpeg', '-y', '-loop', '1', '-i', img_path,
-             '-vf', 'scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720',
-           '-t', str(per_image), '-c:v', 'libx264',
-            '-pix_fmt', 'yuv420p', '-r', '25', out
-           ], capture_output=True, timeout=300)
+            res = subprocess.run([
+                'ffmpeg', '-y', '-loop', '1', '-i', img_path,
+                '-vf', 'scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720',
+                '-t', str(per_image), '-c:v', 'libx264',
+                '-pix_fmt', 'yuv420p', '-r', '25', out
+            ], capture_output=True, timeout=300)
 
             if os.path.exists(out) and os.path.getsize(out) > 0:
                 segment_files.append(out)
@@ -72,7 +69,6 @@ def process_video(job_id, image_urls, audio_url, text):
                 save_job(job_id, f'error: segment {i} failed - {res.stderr.decode()}')
                 return
 
-        # Concat segments
         list_file = f'/tmp/{job_id}_list.txt'
         with open(list_file, 'w') as f:
             for s in segment_files:
@@ -87,7 +83,6 @@ def process_video(job_id, image_urls, audio_url, text):
             save_job(job_id, f'error: concat failed - {res.stderr.decode()}')
             return
 
-        # Add audio
         res = subprocess.run([
             'ffmpeg', '-y',
             '-i', f'/tmp/{job_id}_raw.mp4',
@@ -128,6 +123,7 @@ def get_video(job_id):
     if status == 'done':
         return send_file(f'/tmp/{job_id}_final.mp4', mimetype='video/mp4')
     return jsonify({'error': 'not ready', 'status': status}), 404
+
 @app.route('/debug/<job_id>', methods=['GET'])
 def debug(job_id):
     info = {
@@ -135,7 +131,6 @@ def debug(job_id):
         'files': os.listdir('/tmp')
     }
     return jsonify(info)
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
